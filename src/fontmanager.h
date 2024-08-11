@@ -15,7 +15,8 @@ class fontmanager {
 public:
   static fontmanager *instance();
 
-  bool get_font_buffer(uint32_t unicode, int font_size);
+  bool get_sbit_buffer(uint32_t unicode, int font_size);
+  bool get_image_buffer(uint32_t unicode, int font_size);
 
 private:
   fontmanager();
@@ -29,6 +30,7 @@ private:
   FT_Library m_library;
   FTC_Manager m_manager;
   FTC_SBitCache m_sbitcache;
+  FTC_ImageCache m_imagecache;
   FTC_CMapCache m_cmapcache;
   std::shared_mutex m_rwmutex;
 };
