@@ -5,8 +5,8 @@ int main() {
 //   fontmanager::instance()->get_sbit_buffer(0x4E2D, 16);
     // for (int i = 0; i < 40000; i++)
     {
-        fontmanager::instance()->get_sbit_buffer(0x4E2D, 6);
-        fontmanager::instance()->get_image_buffer(0x4E2D, 6);
+        fontmanager::instance()->get_sbit_buffer(0x4E2D, 96);
+        fontmanager::instance()->get_image_buffer(0x4E2D, 96);
     }
 
   //   std::thread thread1([]() {

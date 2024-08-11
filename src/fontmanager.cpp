@@ -5,6 +5,7 @@
 #include <freetype/ftcache.h>
 #include <freetype/fttypes.h>
 #include <thread>
+#include <png.h>
 
 void print_bitmap(FTC_SBit sbit) {
   printf("================ %dx%d ===============\n", sbit->width, sbit->height);
@@ -57,6 +58,74 @@ void print_bitmap_glyph(FT_BitmapGlyph bitmap_glyph) {
   }
 }
 
+void save_bitmap_to_png(FT_BitmapGlyph bitmap_glyph, const char* filepath) {
+    FT_Bitmap bitmap = bitmap_glyph->bitmap;
+
+    int width = bitmap.width;
+    int height = bitmap.rows;
+
+    // 创建PNG文件
+    FILE* file = fopen(filepath, "wb");
+    if (!file) {
+        fprintf(stderr, "Could not open file for writing: %s\n", filepath);
+        return;
+    }
+
+    // 初始化libpng
+    png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if (!png_ptr) {
+        fprintf(stderr, "Could not allocate write struct\n");
+        fclose(file);
+        return;
+    }
+
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+    if (!info_ptr) {
+        fprintf(stderr, "Could not allocate info struct\n");
+        png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+        fclose(file);
+        return;
+    }
+
+    if (setjmp(png_jmpbuf(png_ptr))) {
+        fprintf(stderr, "Error during png creation\n");
+        png_destroy_write_struct(&png_ptr, &info_ptr);
+        fclose(file);
+        return;
+    }
+
+    png_init_io(png_ptr, file);
+
+    // 设置PNG头信息
+    png_set_IHDR(png_ptr, info_ptr, width, height,
+                 8, PNG_COLOR_TYPE_GRAY_ALPHA, PNG_INTERLACE_NONE,
+                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+    // 写入文件头
+    png_write_info(png_ptr, info_ptr);
+
+    // 分配一行的内存
+    png_bytep row = (png_bytep)malloc(2 * width * sizeof(png_byte));
+
+    // 写入图像数据
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            uint8_t pixel = bitmap.buffer[y * bitmap.pitch + x];
+            row[x * 2] = pixel;      // 灰度值
+            row[x * 2 + 1] = pixel > 0 ? 255 : 0; // Alpha通道，非零像素为不透明
+        }
+        png_write_row(png_ptr, row);
+    }
+
+    // 释放内存和关闭文件
+    free(row);
+    png_write_end(png_ptr, NULL);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    fclose(file);
+
+    printf("PNG saved to %s\n", filepath);
+}
+//===========================================================================
 fontmanager::MyFaceRec fontmanager::s_faces[] = {
     {
         "simhei.ttf",
@@ -82,7 +151,7 @@ fontmanager::fontmanager()
   assert(error == FT_Err_Ok);
 
   error =
-      FTC_Manager_New(m_library, 0, 0, 0, &face_requester, NULL, &m_manager);
+      FTC_Manager_New(m_library, 0, 0, 1024, &face_requester, NULL, &m_manager);
   assert(error == FT_Err_Ok);
 
   error = FTC_CMapCache_New(m_manager, &m_cmapcache);
@@ -173,7 +242,7 @@ bool fontmanager::get_image_buffer(uint32_t unicode, int font_size) {
     printf("FTC_ImageCache_Lookup fail\n");
   }
 
-  print_bitmap_glyph((FT_BitmapGlyph)aglyph);
+  save_bitmap_to_png((FT_BitmapGlyph)aglyph, "font.png");
 
   if (anode) {
     FTC_Node_Unref(anode, m_manager);
