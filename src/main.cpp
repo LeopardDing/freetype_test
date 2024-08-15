@@ -1,44 +1,43 @@
 #include "fontmanager.h"
+#include <cairo.h>
+#include <iostream>
 #include <thread>
 
+struct Color {
+  float red;
+  float green;
+  float blue;
+  float alpha;
+};
+
+void draw_pixel(cairo_t *context, int x, int y, Color color) {
+  cairo_set_source_rgba(context, color.red, color.green, color.blue,
+                        color.alpha);
+  cairo_rectangle(context, x, y, 1, 1);
+  cairo_fill(context);
+}
+
 int main() {
-//   fontmanager::instance()->get_sbit_buffer(0x4E2D, 16);
-    // for (int i = 0; i < 40000; i++)
-    {
-        fontmanager::instance()->get_sbit_buffer(0x4E2D, 96);
-        fontmanager::instance()->get_image_buffer(0x4E2D, 96);
-    }
+  cairo_surface_t *surface =
+      cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 200, 50);
+  if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+    std::cerr << "Error: cannot create cairo surface" << std::endl;
+    return 1;
+  }
 
-  //   std::thread thread1([]() {
-  //     for (int i = 0; i < 10000; i++) {
-  //       fontmanager::instance()->get_sbit_buffer(0x4E2D, 16);
-  //       fontmanager::instance()->get_sbit_buffer(0x4E2D, 16);
-  //     }
-  //   });
+  // 创建一个cairo上下文
+  cairo_t *context = cairo_create(surface);
 
-  //   std::thread thread2([]() {
-  //     for (int i = 0; i < 10000; i++) {
-  //       fontmanager::instance()->get_sbit_buffer(0x4E2D, 20);
-  //       fontmanager::instance()->get_sbit_buffer(0x4E2D, 20);
-  //     }
-  //   });
+  // 画点
+  draw_pixel(context, 0, 0, Color{1.0, 1.0, 1.0, 1.0});
+  draw_pixel(context, 10, 0, Color{1.0, 1.0, 1.0, 1.0});
 
-  //   std::thread thread3([]() {
-  //     for (int i = 0; i < 10000; i++) {
-  //       fontmanager::instance()->get_sbit_buffer(0x4E2D, 32);
-  //       fontmanager::instance()->get_sbit_buffer(0x4E2D, 32);
-  //     }
-  //   });
+  // 提交所有绘制操作
+  cairo_surface_write_to_png(surface, "output.png");
 
-  //   std::thread thread4([]() {
-  //     for (int i = 0; i < 10000; i++) {
-  //       fontmanager::instance()->get_sbit_buffer(0x4E2D, 28);
-  //       fontmanager::instance()->get_sbit_buffer(0x4E2D, 28);
-  //     }
-  //   });
+  // 清理资源
+  cairo_destroy(context);
+  cairo_surface_destroy(surface);
 
-  //   thread1.join();
-  //   thread2.join();
-  //   thread3.join();
-  //   thread4.join();
+  return 0;
 }
