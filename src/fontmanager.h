@@ -18,6 +18,10 @@ public:
   bool get_sbit_buffer(uint32_t unicode, int font_size);
   bool get_image_buffer(uint32_t unicode, int font_size);
 
+  bool start_image(uint32_t unicode, int font_size, FT_Face &face,
+                   FT_Glyph &aglyph, FTC_Node &anode);
+  void end_image(FTC_Node anode);
+
 private:
   fontmanager();
   ~fontmanager();
@@ -32,5 +36,4 @@ private:
   FTC_SBitCache m_sbitcache;
   FTC_ImageCache m_imagecache;
   FTC_CMapCache m_cmapcache;
-  std::shared_mutex m_rwmutex;
 };
